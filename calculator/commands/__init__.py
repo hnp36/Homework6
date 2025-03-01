@@ -1,6 +1,14 @@
+"""
+Calculator REPL Module
+
+This module implements a simple calculator with a Read-Eval-Print Loop (REPL) interface.
+It supports basic arithmetic operations, including addition, subtraction, multiplication,
+and division. Commands are handled dynamically through a command handler system """
+
+import os
 import sys
 import logging
-import os
+from dotenv import load_dotenv, dotenv_values
 from calculator.plugins.addition import AdditionCommand
 from calculator.plugins.substraction import SubtractionCommand
 from calculator.plugins.multiplication import MultiplicationCommand
@@ -11,9 +19,13 @@ from calculator.commands.command_handler import CommandHandler
 # Ensure logs directory exists
 os.makedirs("logs", exist_ok=True)
 
-# Configure logging
+# Load environment variables
+load_dotenv()
+env_vars = dotenv_values(".env")  # Loads all variables as a dictionary
+
+# Debugging environment variables
 logging.basicConfig(
-    level=logging.INFO,  # Change to DEBUG for more details
+    level=logging.DEBUG,  # Set to DEBUG for detailed logs
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler("logs/calculator.log"),
@@ -21,16 +33,30 @@ logging.basicConfig(
     ]
 )
 
-def start():
-    """Start the calculator REPL with logging"""
-    command_handler = CommandHandler()  # Use the imported CommandHandler
+logging.info("Loaded environment variables.")
+logging.debug("Environment Variables: %s", env_vars)
+logging.info("my_secret_key: %s", os.getenv('my_secret_key'))
+logging.info("Host: %s, Port: %s", os.getenv('Host'), os.getenv('Port'))
 
-    # Register commands
-    command_handler.register_command("add", AdditionCommand())
-    command_handler.register_command("subtract", SubtractionCommand())
-    command_handler.register_command("multiply", MultiplicationCommand())
-    command_handler.register_command("divide", DivisionCommand())
-    command_handler.register_command("menu", MenuCommand())
+def start():
+    """Start the calculator REPL with logging and error handling."""
+    command_handler = CommandHandler()
+
+    # Register commands with validation to avoid duplicates
+    commands = {
+        "add": AdditionCommand(),
+        "subtract": SubtractionCommand(),
+        "multiply": MultiplicationCommand(),
+        "divide": DivisionCommand(),
+        "menu": MenuCommand()
+    }
+
+    for name, cmd in commands.items():
+        if name not in command_handler.commands:
+            command_handler.register_command(name, cmd)
+            logging.info("Registered command: %s", name)
+        else:
+            logging.warning("Command '%s' is already registered.", name)
 
     logging.info("Calculator REPL started.")
     print("\nWelcome to Calculator!")
@@ -45,16 +71,22 @@ def start():
                 print("\n >> Goodbye!")
                 break
 
-            logging.info(f"Executing command: {command}")
+            logging.info("Executing command: %s", command)
             command_handler.execute_command(command)
 
         except KeyboardInterrupt:
             logging.info("Calculator exited via keyboard interrupt.")
             print("\n >> Goodbye!")
             break
-        except KeyError as e:
-            logging.warning(f"Unknown command: {command}")
-            print(f"Command not found: {e}")
-        except (ImportError, AttributeError) as e:
-            logging.error(f"Module or command error: {e}", exc_info=True)
-            print(f"Module or command error: {e}")
+        except KeyError:
+            logging.warning("Unknown command: %s", command)
+            print(f"Command not found: {command}")
+        except ImportError as e:
+            logging.error("Module import error: %s", e, exc_info=True)
+            print(f"Module import error: {e}")
+        except Exception as e: # pylint: disable=broad-exception-caught
+            logging.critical("Unexpected error: %s", e, exc_info=True)
+            print(f"Unexpected error: {e}")
+
+if __name__ == "__main__":
+    start()
