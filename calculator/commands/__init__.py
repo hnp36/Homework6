@@ -1,3 +1,10 @@
+"""
+Calculator REPL Module
+
+This module implements a simple calculator with a Read-Eval-Print Loop (REPL) interface.
+It supports basic arithmetic operations, including addition, subtraction, multiplication,
+and division. Commands are handled dynamically through a command handler system """
+
 import os
 import sys
 import logging
@@ -27,9 +34,9 @@ logging.basicConfig(
 )
 
 logging.info("Loaded environment variables.")
-logging.debug(f"Environment Variables: {env_vars}")
-logging.info(f"my_secret_key: {os.getenv('my_secret_key')}")
-logging.info(f"Host: {os.getenv('Host')}, Port: {os.getenv('Port')}")
+logging.debug("Environment Variables: %s", env_vars)
+logging.info("my_secret_key: %s", os.getenv('my_secret_key'))
+logging.info("Host: %s, Port: %s", os.getenv('Host'), os.getenv('Port'))
 
 def start():
     """Start the calculator REPL with logging and error handling."""
@@ -43,13 +50,13 @@ def start():
         "divide": DivisionCommand(),
         "menu": MenuCommand()
     }
-    
+
     for name, cmd in commands.items():
         if name not in command_handler.commands:
             command_handler.register_command(name, cmd)
-            logging.info(f"Registered command: {name}")
+            logging.info("Registered command: %s", name)
         else:
-            logging.warning(f"Command '{name}' is already registered.")
+            logging.warning("Command '%s' is already registered.", name)
 
     logging.info("Calculator REPL started.")
     print("\nWelcome to Calculator!")
@@ -64,7 +71,7 @@ def start():
                 print("\n >> Goodbye!")
                 break
 
-            logging.info(f"Executing command: {command}")
+            logging.info("Executing command: %s", command)
             command_handler.execute_command(command)
 
         except KeyboardInterrupt:
@@ -72,13 +79,13 @@ def start():
             print("\n >> Goodbye!")
             break
         except KeyError:
-            logging.warning(f"Unknown command: {command}")
+            logging.warning("Unknown command: %s", command)
             print(f"Command not found: {command}")
         except ImportError as e:
-            logging.error(f"Module import error: {e}", exc_info=True)
+            logging.error("Module import error: %s", e, exc_info=True)
             print(f"Module import error: {e}")
-        except Exception as e:
-            logging.critical(f"Unexpected error: {e}", exc_info=True)
+        except Exception as e: # pylint: disable=broad-exception-caught
+            logging.critical("Unexpected error: %s", e, exc_info=True)
             print(f"Unexpected error: {e}")
 
 if __name__ == "__main__":
